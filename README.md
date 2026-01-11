@@ -110,3 +110,7 @@ When a user attempts to book, the specific row for that Event is locked in MySQL
 
 The Postman collection is available in the repository at:
 `TicketBooking/Ticketing Platform API.postman_collection.json`
+
+### 8. Database Access
+
+http://localhost:8095/
