@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+    db:
+        image: mysql:8.0
+        platform: linux/x86_64
+        # Required for older clients/libraries to connect to MySQL 8
+        command: --default-authentication-plugin=mysql_native_password
+        environment:
+            MYSQL_DATABASE: ticket_db
+            MYSQL_ROOT_PASSWORD: ticket_root_pass
+        ports:
+            - "3306:3306"
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+        volumes:
+            - mysql_data:/var/lib/mysql
+        networks:
+            - default
+            - ticketing-network
+
+    web:
+        build: .
+        # Changed: Removed auto-migrate and auto-test to allow manual control via Makefile
+        command: python manage.py runserver 0.0.0.0:8000
+        volumes:
+            - .:/code
+        ports:
+            - "8000:8000"
+        env_file:
+          - .env
+        depends_on:
+            db:
+                condition: service_healthy
+        networks:
+            - default
+            - ticketing-network
+    
+    phpmyadmin:
+      depends_on:
+        - db
+      image: phpmyadmin
+      restart: always
+      ports:
+        - "8095:80"
+      networks:
+        - default
+        - ticketing-network
+        - mysql-phpmyadmin
+    
+networks:
+  ticketing-network:
+  mysql-phpmyadmin:
+
+volumes:
+  mysql_data: {}

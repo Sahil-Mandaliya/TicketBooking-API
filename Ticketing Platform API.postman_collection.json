@@ -1,0 +1,138 @@
+{
+	"info": {
+		"_postman_id": "83cc3bd6-1568-46e6-813d-f7a5757fa6d2",
+		"name": "Ticketing Platform API",
+		"description": "API for managing high-concurrency event bookings.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "26330713"
+	},
+	"item": [
+		{
+			"name": "1. Initialize Event",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"New Year Party\",\n    \"tickets\": 10\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/events/init/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"events",
+						"init",
+						""
+					]
+				},
+				"description": "Creates an event with a specific pool of tickets."
+			},
+			"response": []
+		},
+		{
+			"name": "2. Book Ticket (User 1)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"event_id\": 1,\n    \"user_id\": \"user_001\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/tickets/book/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"tickets",
+						"book",
+						""
+					]
+				},
+				"description": "Attempts to book a ticket for User 1. Note: Max 2 tickets per user."
+			},
+			"response": []
+		},
+		{
+			"name": "3. Book Ticket (User 2)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"event_id\": 1,\n    \"user_id\": \"user_002\",\n    \"number_of_tickets\":1\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/tickets/book/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"tickets",
+						"book",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4. Cancel Ticket",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"event_id\": 1,\n    \"user_id\": \"user_001\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/tickets/cancel/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"tickets",
+						"cancel",
+						""
+					]
+				},
+				"description": "Cancels one ticket and returns it to the pool."
+			},
+			"response": []
+		}
+	]
+}
