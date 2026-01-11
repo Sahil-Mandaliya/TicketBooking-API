@@ -75,24 +75,34 @@ make test
 ### 5. API Endpoints
 
 1. Initialize Event
+
+```bash
 POST /api/events/init/
 
 Body: {"name": "Summer Fest", "tickets": 100}
+```
 
 2. Book Ticket
+
+```bash
 POST /api/tickets/book/
 
 Body: {"event_id": 1, "user_id": "user_123", "number_of_tickets": 1}
+```
 
 Constraint: Max 2 tickets per user. Handles race conditions via select_for_update().
 
 3. Cancel Ticket
+
+```bash
 POST /api/tickets/cancel/
 
 Body: {"event_id": 1, "user_id": "user_123", "quantity": 1}
+```
 
 ### 6. Concurrency Strategy
-The system prevents overbooking by using Pessimistic Locking and Atomic Transactions.
+
+The system prevents overbooking by using Row level (event level) Locking and Atomic Transactions.
 
 When a user attempts to book, the specific row for that Event is locked in MySQL. Any other simultaneous requests for the same event must wait until the first transaction commits. This ensures that the available_tickets count is always accurate.
 
