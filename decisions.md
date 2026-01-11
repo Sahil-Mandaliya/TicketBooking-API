@@ -4,9 +4,9 @@ This document explains the key technical decisions made while building the ticke
 
 ---
 
-## 1. Why I chose this database structure
+## 1. Database Choice and Structure
 
-I chose **MySQL with a relational schema** because ticket booking requires **strong consistency** and **transaction safety**.
+I used **MySQL with a relational schema** because ticket booking needs **strong consistency** and **safe concurrent updates**.
 
 ### Database structure (simplified)
 
@@ -22,101 +22,101 @@ I chose **MySQL with a relational schema** because ticket booking requires **str
     -   `quantity`
     -   `status`
 
-### Reasons for this choice
+### Why this works well
 
-**ACID compliance**  
-Ticket booking cannot allow overbooking. If only **1 ticket** is left, only **one user** should be able to book it. MySQL transactions guarantee this consistency.
+**Strong consistency**  
+Overbooking is not acceptable. If only **1 ticket** is available, only **one user** should be able to book it. MySQL transactions ensure this.
+
+**Transactional safety**  
+Ticket availability is updated inside a single transaction, so partial updates never occur.
 
 **Row-level locking**  
-During booking, I use `SELECT ... FOR UPDATE` to lock only the specific event row.  
+During booking, the event row is locked using `SELECT ... FOR UPDATE`.  
 This allows:
 
--   High concurrency across different events
 -   Safe handling when multiple users try to book the last ticket
+-   Parallel bookings for different events
 
 ---
 
-## 2. Race condition approaches considered
+## 2. Handling Race Conditions
 
 ### Row-level locking (Chosen)
 
-I lock the event row during the booking transaction.
+The event row is locked during the booking transaction.
 
-**Example**  
-If Event A has 1 ticket:
+**Example**
 
+-   Event A has 1 ticket
 -   User A locks the row and books successfully
--   User B waits, then sees 0 tickets and gets an error
+-   User B waits, then sees 0 tickets and receives an error
 
 **Why chosen**
 
--   Very reliable for high-contention scenarios
--   Simple and safe at database level
+-   Simple and reliable
+-   Works well for high-contention cases
+-   Prevents overbooking at the database level
 
 ---
 
-### Optimistic locking (Redis level locking) (Rejected)
+### Optimistic locking / Retry-based approach (Rejected)
 
-This approach uses a version field and retries if data changes.
+This approach retries the transaction if data changes.
 
 **Why rejected**
 
--   For popular events, many requests would fail and retry
--   Causes high CPU usage and poor performance
--   Not suitable when many users fight for the same resource
+-   For popular events, most requests would fail and retry
+-   Causes unnecessary CPU load
+-   Poor performance under heavy contention
 
 ---
 
-### Application-level locks / Redis mutex
+### Application-level locks / Redis mutex (Rejected)
 
-This approach uses Redis to lock the booking process.
+This approach uses Redis to manage locks.
 
 **Why rejected**
 
--   Adds extra complexity
--   Risk of stale locks if the app crashes
--   Database transactions are simpler and fully atomic
+-   Adds extra infrastructure complexity
+-   Risk of stale locks if the application crashes
+-   Database transactions already provide atomicity
 
 ---
 
-## 3. Scaling to 1 Million Requests Per Second (RPS)
+## 3. Scaling to High Traffic (1M RPS)
 
 ### Current bottleneck
 
 **Database row contention**
 
-When millions of users try to book the same event:
+When many users try to book the same event:
 
 -   All requests compete for the same database row
--   MySQL cannot handle that level of contention efficiently
+-   This limits scalability
 
 ---
 
 ### Scalable approach
 
-**Step 1: Use Redis for ticket count**
+**Step 1: Redis-based ticket counter**
 
 -   Store available tickets in Redis
--   Use Lua scripts to decrement tickets atomically
+-   Use Lua scripts for atomic decrement
 
-**Step 2: Async persistence**
+**Step 2: Asynchronous database writes**
 
--   Once Redis confirms booking:
-    -   Push message to Kafka / RabbitMQ
--   Background workers write bookings to MySQL
+-   After Redis confirms the booking:
+    -   Send an event to Kafka / RabbitMQ
+-   Background workers persist data to MySQL
 
-This approach:
-
--   Handles massive traffic
--   Keeps MySQL consistent
--   Scales horizontally
+This reduces database load and allows horizontal scaling.
 
 ---
 
 ## Summary
 
 -   MySQL ensures correctness and consistency
--   Pessimistic locking safely handles race conditions
--   Redis + async writes enable large-scale traffic
+-   Row-level locking prevents overbooking
+-   Redis and async processing enable large-scale traffic
 
-This design is simple, reliable, and has a clear path to scale.
+The design is simple, safe, and easy to scale.
