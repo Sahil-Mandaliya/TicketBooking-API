@@ -107,3 +107,6 @@ The system prevents overbooking by using Row level (event level) Locking and Ato
 When a user attempts to book, the specific row for that Event is locked in MySQL. Any other simultaneous requests for the same event must wait until the first transaction commits. This ensures that the available_tickets count is always accurate.
 
 ### 7. Postman Collection
+
+The Postman collection is available in the repository at:
+`TicketBooking/Ticketing Platform API.postman_collection.json`
